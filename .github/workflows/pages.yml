@@ -1,0 +1,73 @@
+name: Collect market data and deploy Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dist/**"
+      - ".github/scripts/**"
+      - ".github/workflows/pages.yml"
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Collect gold and exchange-rate data
+        if: github.event_name != 'push'
+        continue-on-error: true
+        run: node .github/scripts/update-market-data.mjs
+
+      - name: Save collected data
+        if: github.event_name != 'push'
+        run: |
+          if git diff --quiet -- dist/data/market.json; then
+            echo "No market-data change to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/data/market.json
+          git commit -m "$(TZ=Asia/Seoul date +%Y%m%d)_dist_data_시장데이터자동수집"
+          git push
+
+      - name: Prepare static site
+        run: cp dist/index.html dist/404.html
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
