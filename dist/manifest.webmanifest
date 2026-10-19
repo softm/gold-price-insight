@@ -1,0 +1,19 @@
+{
+  "name": "금시그널 — 금 시세 전망 인사이트",
+  "short_name": "금시그널",
+  "description": "국제 금값과 환율을 조합해 원화 금 시세 시나리오를 탐색하는 인사이트 앱",
+  "lang": "ko-KR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f0e9",
+  "theme_color": "#191a16",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
