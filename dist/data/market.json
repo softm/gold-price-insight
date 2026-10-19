@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-19T04:20:32.656Z",
+  "market": {
+    "goldUsdOz": 4178.600098,
+    "usdKrw": 1337.63,
+    "domesticPremiumPct": 0,
+    "goldUpdatedAt": "2026-10-19T04:20:19Z",
+    "fxDate": "2026-10-19"
+  },
+  "sources": [
+    {
+      "name": "Gold API",
+      "url": "https://api.gold-api.com/price/XAU"
+    },
+    {
+      "name": "Frankfurter",
+      "url": "https://api.frankfurter.dev/v2/rate/usd/krw"
+    }
+  ],
+  "history": [
+    {
+      "date": "2026-10-19",
+      "goldUsdOz": 4178.600098,
+      "usdKrw": 1337.63
+    }
+  ]
+}
