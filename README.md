@@ -23,6 +23,10 @@ python3 -m http.server 4173 --directory dist
 - Gold API와 Frankfurter를 이용한 6시간 주기 시장 데이터 자동 수집
 - GitHub Actions 기반 GitHub Pages 자동 배포
 
+## 디자인 시스템
+
+UI는 [Google Stitch의 Gold Signal UI System](https://stitch.withgoogle.com/projects/12537166845152557427?pli=1)을 기준으로 구현했습니다. Newsreader·Manrope 조합, 아이보리 페이퍼 표면, 차콜 모놀리스, 브라스 포인트와 편집형 12열 그리드를 데스크톱·모바일 반응형 화면에 적용했습니다.
+
 ## 데이터 자동화
 
 `.github/workflows/pages.yml`은 6시간마다 국제 금값과 USD/KRW 환율을 수집해 `dist/data/market.json`을 갱신하고 GitHub Pages를 다시 배포합니다. API 장애 시 마지막 정상 데이터가 유지됩니다.
@@ -45,4 +49,4 @@ cd android
 
 릴리스 빌드에는 로컬 `signing.properties`와 `keystore/`의 업로드 키가 필요하며 두 경로는 Git에서 제외됩니다.
 
-이 앱의 수치는 샘플 입력값을 기반으로 한 시뮬레이션이며 실제 시세나 투자 수익을 보장하지 않습니다.
+이 앱의 수치는 자동 수집 시장 데이터와 사용자가 조정한 가정을 기반으로 한 시뮬레이션이며 실제 시세나 투자 수익을 보장하지 않습니다.
