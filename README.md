@@ -2,7 +2,11 @@
 
 국제 금값, 원·달러 환율, 국내 프리미엄, 시장 온도를 조합해 원화 기준 금 시세 시나리오를 탐색하는 정적 웹 앱입니다.
 
-공개 주소: `https://softm.github.io/gold-price-insight/`
+공개 주소: `https://goldsignal.designboard.net/`
+
+개인정보처리방침: `https://goldsignal.designboard.net/privacy.html`
+
+저장소: `https://github.com/softm/goldsignal`
 
 ## 로컬 실행
 
