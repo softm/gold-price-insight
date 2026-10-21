@@ -18,9 +18,12 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="stylesheet" href="./styles.css?v=20261019-stitch3" />
-    <script src="./app.js?v=20261019-stitch3" defer></script>
+    <link rel="stylesheet" href="./adfit.css?v=20261022-adfit1" />
+    <script src="./adfit-config.js?v=20261022-adfit1" defer></script>
+    <script src="./adfit.js?v=20261022-adfit1" defer></script>
+    <script src="./app.js?v=20261022-adfit1" defer></script>
   </head>
-  <body>
+  <body class="adfit-layout">
     <a class="skip-link" href="#main-content">본문으로 바로가기</a>
 
     <div class="app-shell">
@@ -63,7 +66,7 @@
         </button>
       </aside>
 
-      <main class="main" id="main-content">
+      <main class="main" id="main-content" tabindex="-1">
         <header class="topbar">
           <div>
             <p class="eyebrow">MARKET BRIEF &amp; QUANT DESK</p>
@@ -298,6 +301,20 @@
         </section>
       </main>
     </div>
+
+    <aside class="gold-ad-dock" id="goldAdDock" aria-label="하단 광고" hidden>
+      <div class="gold-ad-controls">
+        <span class="gold-ad-label">광고</span>
+        <button class="gold-ad-toggle" id="goldAdToggle" type="button" aria-controls="goldAdPanel" aria-expanded="true">
+          <span id="goldAdToggleText">광고 접기</span>
+        </button>
+      </div>
+      <div class="gold-ad-panel" id="goldAdPanel">
+        <div class="gold-ad-host" id="goldAdHost">
+          <p class="gold-ad-status" id="goldAdStatus" role="status">광고를 불러오는 중입니다.</p>
+        </div>
+      </div>
+    </aside>
 
     <nav class="mobile-nav" aria-label="모바일 주요 메뉴">
       <a href="#overview" class="is-active"><span>⌁</span>요약</a>

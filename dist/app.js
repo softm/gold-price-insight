@@ -372,22 +372,43 @@
 
   const sections = [...document.querySelectorAll("main section[id]")];
   const navLinks = [...document.querySelectorAll(".nav-item, .mobile-nav a")];
-  const observer = new IntersectionObserver((entries) => {
-    const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-    if (!visible) return;
+  const scrollRoot = document.querySelector("#main-content");
+  let navigationFrame = 0;
+  function updateActiveNavigation() {
+    const top = scrollRoot.getBoundingClientRect().top;
+    const header = document.querySelector(".topbar");
+    const stickyHeader = getComputedStyle(header).position === "sticky" ? header.getBoundingClientRect().height : 0;
+    const readingLine = top + stickyHeader + 32;
+    const atBottom = scrollRoot.scrollTop > 0 && scrollRoot.scrollTop + scrollRoot.clientHeight >= scrollRoot.scrollHeight - 2;
+    const visible = atBottom ? sections.at(-1)
+      : sections.filter((section) => section.getBoundingClientRect().top <= readingLine).at(-1) || sections[0];
     navLinks.forEach((link) => {
-      const active = link.getAttribute("href") === `#${visible.target.id}`;
+      const active = link.getAttribute("href") === `#${visible.id}`;
       link.classList.toggle("is-active", active);
       if (active) link.setAttribute("aria-current", "page");
       else link.removeAttribute("aria-current");
     });
-  }, { rootMargin: "-25% 0px -60%", threshold: [0, 0.2, 0.6] });
-  sections.forEach((section) => observer.observe(section));
+  }
+  function queueNavigationUpdate() {
+    if (navigationFrame) return;
+    navigationFrame = requestAnimationFrame(() => { navigationFrame = 0; updateActiveNavigation(); });
+  }
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(queueNavigationUpdate, {
+      root: scrollRoot, rootMargin: "0px 0px -60%", threshold: [0, 0.2, 0.6],
+    });
+    sections.forEach((section) => observer.observe(section));
+  }
+  scrollRoot.addEventListener("scroll", queueNavigationUpdate, { passive: true });
+  window.addEventListener("resize", queueNavigationUpdate, { passive: true });
+  window.addEventListener("hashchange", queueNavigationUpdate);
+  if ("ResizeObserver" in window) new ResizeObserver(queueNavigationUpdate).observe(scrollRoot);
+  queueNavigationUpdate();
 
   render();
   loadAutomatedMarketData();
 
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=20261022-adfit1", { updateViaCache: "none" }).catch(() => {}));
   }
 })();

@@ -1,0 +1,152 @@
+/* A real layout row reserves ad space: neither the content nor navigation sits underneath it. */
+body.adfit-layout {
+  --gold-ad-dock-height: 0px;
+  --gold-mobile-nav-height: 0px;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+}
+.adfit-layout .app-shell {
+  grid-row: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.adfit-layout .sidebar {
+  position: static;
+  grid-column: 1;
+  grid-row: 1;
+  width: auto;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+}
+.adfit-layout .main {
+  grid-row: 1;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
+  scroll-padding-top: 84px;
+}
+.adfit-layout .dashboard { padding-bottom: 28px; }
+.adfit-layout .main:focus { outline: none; }
+.gold-ad-dock {
+  grid-row: 2;
+  min-width: 0;
+  width: 100%;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+.gold-ad-dock[hidden], .gold-ad-dock [hidden] { display: none !important; }
+.gold-ad-controls {
+  min-height: 44px;
+  width: min(100%, 960px);
+  margin-inline: auto;
+  padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.gold-ad-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.gold-ad-label::before {
+  content: "AD";
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 2px 4px;
+  color: var(--gold-deep, #765917);
+  font: 700 9px/1 Manrope, sans-serif;
+}
+.gold-ad-toggle {
+  min-width: 108px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 4px 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.gold-ad-toggle::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin: -4px 3px 0 0;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+.gold-ad-toggle[aria-expanded="false"]::after { margin-top: 4px; transform: rotate(225deg); }
+.gold-ad-toggle:hover { color: var(--gold-deep, #765917); }
+.gold-ad-toggle:focus-visible { outline: 2px solid var(--gold); outline-offset: -3px; border-radius: 4px; }
+.gold-ad-panel {
+  padding-top: 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+}
+.gold-ad-host {
+  --gold-ad-height: 100px;
+  position: relative;
+  min-height: var(--gold-ad-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+}
+.gold-ad-host > ins { flex: none; }
+.gold-ad-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 11px;
+  pointer-events: none;
+}
+.adfit-layout .toast {
+  bottom: calc(var(--gold-ad-dock-height) + var(--gold-mobile-nav-height) + 16px);
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+body.dark .gold-ad-label::before, body.dark .gold-ad-toggle:hover { color: var(--gold-light); }
+@media (max-width: 820px) {
+  .adfit-layout .app-shell { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .adfit-layout .sidebar { display: none; }
+  .adfit-layout .main { grid-column: 1; scroll-padding-top: 16px; }
+  .adfit-layout .mobile-nav {
+    position: static;
+    grid-row: 3;
+    width: auto;
+    margin: 0;
+    min-height: 64px;
+    padding: 8px max(12px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .adfit-layout .mobile-nav a { min-height: 44px; }
+  .gold-ad-panel { padding-bottom: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adfit-layout .main { scroll-behavior: auto; }
+}
