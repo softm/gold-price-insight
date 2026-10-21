@@ -7,7 +7,7 @@ const FX_URL = "https://api.frankfurter.dev/v2/rate/usd/krw";
 
 async function fetchJson(url) {
   const response = await fetch(url, {
-    headers: { accept: "application/json", "user-agent": "gold-price-insight-data-collector/1.0" },
+    headers: { accept: "application/json", "user-agent": "goldsignal-data-collector/1.0" },
     signal: AbortSignal.timeout(20_000),
   });
   if (!response.ok) throw new Error(`${url} returned ${response.status}`);
