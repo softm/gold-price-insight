@@ -32,7 +32,10 @@
 무료
 
 ## 개인정보처리방침
-https://softm.github.io/gold-price-insight/privacy.html
+https://goldsignal.designboard.net/privacy.html
+
+## 웹사이트
+https://goldsignal.designboard.net/
 
 ## 지원 URL
-https://github.com/softm/gold-price-insight/issues
+https://github.com/softm/goldsignal/issues

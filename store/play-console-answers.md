@@ -12,10 +12,11 @@
 - 카테고리: 금융
 - 대상 국가/지역: 대한민국
 - 개발자/운영 주체: softmnet
+- 웹사이트: `https://goldsignal.designboard.net/`
 
 ## 앱 콘텐츠
 
-- 개인정보처리방침: `https://softm.github.io/gold-price-insight/privacy.html`
+- 개인정보처리방침: `https://goldsignal.designboard.net/privacy.html`
 - 광고 포함 여부: 아니요
 - 앱 액세스: 로그인이나 멤버십 없이 모든 기능 이용 가능
 - 타겟층: 만 18세 이상
