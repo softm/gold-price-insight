@@ -31,9 +31,9 @@ import java.io.InputStream;
 import java.net.URLConnection;
 
 public class MainActivity extends Activity {
-    private static final String REMOTE_HOME = "https://softm.github.io/gold-price-insight/";
+    private static final String REMOTE_HOME = "https://goldsignal.designboard.net/";
     private static final String LOCAL_HOME = "https://appassets.androidplatform.net/assets/index.html";
-    private static final String TRUSTED_HOST = "softm.github.io";
+    private static final String TRUSTED_HOST = "goldsignal.designboard.net";
     private static final String ASSET_HOST = "appassets.androidplatform.net";
 
     private WebView webView;
@@ -117,7 +117,7 @@ public class MainActivity extends Activity {
         settings.setMediaPlaybackRequiresUserGesture(true);
         settings.setSupportMultipleWindows(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
-        settings.setUserAgentString(settings.getUserAgentString() + " GoldSignalAndroid/1.0");
+        settings.setUserAgentString(settings.getUserAgentString() + " GoldSignalAndroid/1.0.1");
         if (Build.VERSION.SDK_INT >= 26) settings.setSafeBrowsingEnabled(true);
 
         CookieManager.getInstance().setAcceptCookie(false);
@@ -243,6 +243,8 @@ public class MainActivity extends Activity {
 
     @Override
     @SuppressWarnings("deprecation")
+    // API 33+ uses the platform callback registered in onCreate; this is the API 24–32 fallback.
+    @SuppressLint("GestureBackNavigation")
     public void onBackPressed() {
         if (Build.VERSION.SDK_INT < 33) handleBack();
         else super.onBackPressed();
