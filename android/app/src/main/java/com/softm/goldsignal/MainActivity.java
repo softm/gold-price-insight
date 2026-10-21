@@ -126,7 +126,20 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return route(request.getUrl());
+                Uri uri = request.getUrl();
+                if (request.isForMainFrame()) return route(uri);
+
+                // Ad SDKs navigate their own frames. Those navigations must not
+                // launch a browser or another app without a user's action.
+                String scheme = uri == null ? null : uri.getScheme();
+                if ("https".equalsIgnoreCase(scheme) || "about".equalsIgnoreCase(scheme)
+                    || "data".equalsIgnoreCase(scheme) || "blob".equalsIgnoreCase(scheme)) {
+                    return false;
+                }
+                // Keep mixed-content blocking in effect and prevent an HTTP
+                // frame from escaping it through an external browser.
+                if ("http".equalsIgnoreCase(scheme)) return true;
+                return !request.hasGesture() || route(uri);
             }
 
             @Override
