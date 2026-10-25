@@ -1,9 +1,9 @@
-const CACHE_NAME = "gold-signal-v4-adfit";
+const CACHE_NAME = "gold-signal-v5-unit5";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=20261019-stitch3",
-  "./app.js?v=20261022-adfit1",
+  "./styles.css?v=20261025-unit5",
+  "./app.js?v=20261025-unit5",
   "./adfit-config.js?v=20261022-adfit1",
   "./adfit.js?v=20261022-adfit1",
   "./adfit.css?v=20261022-adfit1",
