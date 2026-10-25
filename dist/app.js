@@ -1,7 +1,23 @@
 (function () {
   "use strict";
 
-  const OUNCE_IN_GRAMS = 31.1035;
+  const OUNCE_IN_GRAMS = 31.1034768;
+  const PRICE_UNITS = Object.freeze({
+    don: { grams: 3.75, label: "1돈(3.75g)", short: "1돈", factor: "3.75" },
+    gram: { grams: 1, label: "1g", short: "1g", factor: "1" },
+    troy: { grams: OUNCE_IN_GRAMS, label: "1트로이온스(31.1034768g)", short: "1트로이온스", factor: "31.1034768" },
+  });
+  const UNIT_STORAGE_KEY = "goldSignalPriceUnitV1";
+  const TARGET_STORAGE_KEY = "goldSignalTargetPerGramV1";
+  function getStoredUnit() {
+    try {
+      const value = localStorage.getItem(UNIT_STORAGE_KEY);
+      return Object.hasOwn(PRICE_UNITS, value) ? value : "don";
+    } catch (_) { return "don"; }
+  }
+  let latestMarketSnapshot = null;
+  let marketHistory = [];
+  let marketLoaded = false;
   const horizons = {
     7: { label: "7일", base: 0.008, bull: 0.027, bear: -0.022, volatility: 0.024 },
     30: { label: "30일", base: 0.024, bull: 0.071, bear: -0.046, volatility: 0.038 },
@@ -12,6 +28,7 @@
   const state = {
     horizon: 30,
     scenario: "base",
+    priceUnit: getStoredUnit(),
     goldUsd: 3330,
     exchange: 1395,
     premium: 0,
@@ -27,6 +44,15 @@
 
   const els = {
     currentPrice: document.querySelector("#currentPrice"),
+    priceUnitHeading: document.querySelector("#priceUnitHeading"),
+    chartPriceUnit: document.querySelector("#chartPriceUnit"),
+    targetUnitLabel: document.querySelector("#targetUnitLabel"),
+    calculationFormula: document.querySelector("#calculationFormula"),
+    marketInsight: document.querySelector("#marketInsight"),
+    scenarioInsight: document.querySelector("#scenarioInsight"),
+    goldInsight: document.querySelector("#goldInsight"),
+    dailyBrief: document.querySelector("#dailyBrief"),
+    watchPoint: document.querySelector("#watchPoint"),
     currentChange: document.querySelector("#currentChange"),
     horizonLabel: document.querySelector("#horizonLabel"),
     directionText: document.querySelector("#directionText"),
@@ -66,6 +92,41 @@
     currency: "KRW",
     maximumFractionDigits: 0,
   });
+
+  function getPriceUnit() { return PRICE_UNITS[state.priceUnit]; }
+    function formatUnitPrice(pricePerGram) { return won.format(pricePerGram * getPriceUnit().grams); }
+    function formatChartAxis(pricePerGram) {
+      const v = pricePerGram * getPriceUnit().grams;
+      if (Math.abs(v) >= 1000000) return `${(v / 1000000).toFixed(2)}백만`;
+      if (Math.abs(v) >= 10000) return `${(v / 10000).toFixed(1)}만`;
+      return Math.round(v).toLocaleString("ko-KR");
+    }
+    function updateUnitDisplay() {
+      const unit = getPriceUnit();
+      els.priceUnitHeading.textContent = `국제 금값 원화 환산 추정가 · ${unit.label}`;
+      els.chartPriceUnit.textContent = `KRW / ${unit.label}`;
+      els.targetUnitLabel.textContent = `${unit.label} 목표가`;
+      els.calculationFormula.textContent = `국제 금값(USD/트로이온스) ÷ ${OUNCE_IN_GRAMS} × 원·달러 환율 × (1 + 국내 프리미엄/100) × ${unit.factor}g으로 ${unit.short} 원화 환산 추정가를 계산합니다.`;
+      els.footerSource.textContent = `기준 단위: KRW / ${unit.label} · ${marketLoaded ? "Gold API · Frankfurter" : "기본 가정 시뮬레이션"}`;
+      els.targetInput.placeholder = String(Math.round(getCurrentPrice() * unit.grams / 100) * 100);
+      document.querySelectorAll("[data-price-unit]").forEach((button) => {
+        const active = button.dataset.priceUnit === state.priceUnit;
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+    }
+    function getSavedTargetPerGram() {
+      try {
+        const stored = Number(localStorage.getItem(TARGET_STORAGE_KEY));
+        if (Number.isFinite(stored) && stored > 0) return stored;
+        const legacy = Number(localStorage.getItem("goldSignalTarget"));
+        if (Number.isFinite(legacy) && legacy > 0) {
+          localStorage.setItem(TARGET_STORAGE_KEY, String(legacy));
+          return legacy;
+        }
+      } catch (_) { /* Storage can be disabled. */ }
+      return 0;
+    }
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -150,7 +211,7 @@
       const y = top + (i / 3) * (bottom - top);
       const value = high - (i / 3) * (high - low);
       els.chartGrid.insertAdjacentHTML("beforeend", `<line x1="${left}" x2="${right}" y1="${y}" y2="${y}"></line>`);
-      els.chartLabels.insertAdjacentHTML("beforeend", `<text x="3" y="${y + 3}">${Math.round(value / 1000).toLocaleString("ko-KR")}천</text>`);
+      els.chartLabels.insertAdjacentHTML("beforeend", `<text x="3" y="${y + 3}">${formatChartAxis(value)}</text>`);
     }
 
     const labelMap = state.horizon === 7 ? ["오늘", "2일", "4일", "7일"]
@@ -168,7 +229,7 @@
       const nearest = points.reduce((best, point) => Math.abs(point.x - chartX) < Math.abs(best.x - chartX) ? point : best, points[0]);
       const visualX = (nearest.x / 840) * rect.width;
       const visualY = (nearest.y / 300) * rect.height;
-      els.chartTooltip.textContent = won.format(nearest.value);
+      els.chartTooltip.textContent = `${formatUnitPrice(nearest.value)} / ${getPriceUnit().short}`;
       els.chartTooltip.style.left = `${visualX}px`;
       els.chartTooltip.style.top = `${visualY}px`;
       els.chartTooltip.classList.add("is-visible");
@@ -190,19 +251,20 @@
     const [direction, reason] = describeOutlook(rate);
     const confidence = getConfidence();
 
-    els.currentPrice.textContent = won.format(current);
+    updateUnitDisplay();
+    els.currentPrice.textContent = formatUnitPrice(current);
     els.horizonLabel.textContent = horizons[state.horizon].label;
     els.directionText.textContent = direction;
     els.forecastReason.textContent = reason;
-    els.forecastRange.textContent = `${won.format(rangeLow)} — ${won.format(rangeHigh)}`;
-    els.forecastPrice.textContent = won.format(target);
+    els.forecastRange.textContent = `${formatUnitPrice(rangeLow)} — ${formatUnitPrice(rangeHigh)}`;
+    els.forecastPrice.textContent = formatUnitPrice(target);
     els.forecastChange.textContent = formatPercent(rate);
     els.forecastChange.classList.toggle("positive", rate >= 0);
     els.forecastChange.style.color = rate < 0 ? "#d58b80" : "";
     els.confidenceScore.textContent = confidence;
     els.confidenceRing.style.setProperty("--score", confidence);
     els.confidenceRing.setAttribute("aria-label", `전망 신뢰도 ${confidence}점`);
-    els.chartCenter.textContent = won.format(target);
+    els.chartCenter.textContent = formatUnitPrice(target);
     els.chartDelta.textContent = `현재 대비 ${formatPercent(rate)}`;
     els.chartDelta.style.color = rate >= 0 ? "var(--green)" : "var(--red)";
     els.premiumOutput.value = `${state.premium > 0 ? "+" : ""}${state.premium.toFixed(1)}%`;
@@ -211,6 +273,33 @@
     updateSliderFill(els.sentimentInput);
     renderChart(current, target);
     updateTargetStatus(current);
+    renderInsights(current, target, rangeLow, rangeHigh, rate);
+  }
+
+  function renderInsights(current, target, rangeLow, rangeHigh, rate) {
+    const unit = getPriceUnit();
+    if (latestMarketSnapshot && marketHistory.length > 1) {
+      const start = marketHistory.find((row) => row && row.date && row.date < latestMarketSnapshot.date && Number(row.goldUsdOz) > 0 && Number(row.usdKrw) > 0);
+      if (start) {
+        const goldDelta = latestMarketSnapshot.goldUsdOz / Number(start.goldUsdOz) - 1;
+        const fxDelta = latestMarketSnapshot.usdKrw / Number(start.usdKrw) - 1;
+        const wonDelta = latestMarketSnapshot.goldUsdOz * latestMarketSnapshot.usdKrw / (Number(start.goldUsdOz) * Number(start.usdKrw)) - 1;
+        const measuredPerGram = latestMarketSnapshot.goldUsdOz / OUNCE_IN_GRAMS * latestMarketSnapshot.usdKrw * (1 + latestMarketSnapshot.premium / 100);
+        els.marketInsight.textContent = `${start.date} → ${latestMarketSnapshot.date} 수집 자료: 국제 금값 ${formatPercent(goldDelta)}, 환율 ${formatPercent(fxDelta)}, 원화 환산가 ${formatPercent(wonDelta)}. 최근 수집 ${unit.short} 환산가는 약 ${formatUnitPrice(measuredPerGram)}입니다.`;
+        els.dailyBrief.textContent = `최근 원화 환산 금값은 ${wonDelta >= 0 ? "상승" : "하락"}했습니다. 국제 금값(${formatPercent(goldDelta)})과 원·달러 환율(${formatPercent(fxDelta)})을 함께 살펴보세요.`;
+      } else {
+        els.marketInsight.textContent = `현재 입력 가정의 ${unit.short} 환산가는 ${formatUnitPrice(current)}입니다. 최근 수집 이력은 거래일과 갱신 시점에 따라 다를 수 있습니다.`;
+        els.dailyBrief.textContent = "국제 금값과 원·달러 환율을 함께 봐야 원화 금시세를 이해할 수 있습니다.";
+      }
+    } else {
+      els.marketInsight.textContent = `현재 입력 기준 ${unit.short} 원화 환산가는 ${formatUnitPrice(current)}입니다. 수집된 이력이 충분해지면 실제 기록에 근거해 변화를 비교합니다.`;
+      els.dailyBrief.textContent = `${unit.short} 기준 ${formatUnitPrice(current)}. 국제 금값·환율·국내 프리미엄을 함께 확인해 보세요.`;
+    }
+    els.watchPoint.textContent = `입력값 · 국제 금 US$${state.goldUsd.toLocaleString("en-US", { maximumFractionDigits: 2 })}/트로이온스 · USD/KRW ${state.exchange.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}`;
+    const scenario = { bull: "상승", base: "기본", bear: "하락" }[state.scenario];
+    els.scenarioInsight.textContent = `${horizons[state.horizon].label} ${scenario} 시나리오에서 ${unit.short} 중심 전망은 ${formatUnitPrice(target)}(${formatPercent(rate)}), 범위는 ${formatUnitPrice(rangeLow)}~${formatUnitPrice(rangeHigh)}입니다. 가정에 따른 시뮬레이션이며 실제 시세를 보장하지 않습니다.`;
+    const fxImpact = state.goldUsd / OUNCE_IN_GRAMS * 10 * (1 + state.premium / 100) * unit.grams;
+    els.goldInsight.textContent = `국제 금값이 같고 환율만 달러당 10원 상승하면 ${unit.short} 원화 환산가는 약 ${won.format(fxImpact)} 올라갑니다. 금 실물 매수·매도에는 부가세·가공비·매매 스프레드 등이 추가될 수 있습니다.`;
   }
 
   function showToast(message) {
@@ -241,7 +330,14 @@
       const gold = Number(payload?.market?.goldUsdOz);
       const exchange = Number(payload?.market?.usdKrw);
       const premium = Number(payload?.market?.domesticPremiumPct ?? 0);
-      if (!Number.isFinite(gold) || !Number.isFinite(exchange)) throw new Error("invalid market data");
+      if (!Number.isFinite(gold) || gold <= 0 || !Number.isFinite(exchange) || exchange <= 0) throw new Error("invalid market data");
+      latestMarketSnapshot = {
+        goldUsdOz: gold, usdKrw: exchange,
+        premium: Number.isFinite(premium) ? premium : 0,
+        date: typeof payload?.market?.fxDate === "string" ? payload.market.fxDate : String(payload.generatedAt || "").slice(0, 10),
+      };
+      marketHistory = Array.isArray(payload.history) ? payload.history : [];
+      marketLoaded = true;
 
       state.goldUsd = clamp(gold, 1000, 10000);
       state.exchange = clamp(exchange, 800, 2500);
@@ -257,7 +353,7 @@
       els.currentChange.textContent = "자동 환산";
       els.priceCaption.textContent = "자동 수집한 국제 금값과 원·달러 환율로 계산";
       els.dataStatus.innerHTML = `<span></span> 자동 수집 · ${formatCollectedAt(payload.generatedAt)}`;
-      els.footerSource.textContent = "기준 단위: KRW / 1g · Gold API · Frankfurter";
+      updateUnitDisplay();
 
       const sourceDate = payload?.market?.fxDate || payload.generatedAt;
       const parsedDate = new Date(sourceDate);
@@ -267,22 +363,39 @@
       render();
     } catch (_) {
       els.dataStatus.innerHTML = "<span></span> 기본 데이터 · 시뮬레이션";
-      els.footerSource.textContent = "기준 단위: KRW / 1g · 마지막 기본 데이터";
+      updateUnitDisplay();
     }
   }
 
-  function updateTargetStatus(currentPrice) {
-    const savedTarget = Number(localStorage.getItem("goldSignalTarget"));
-    if (!savedTarget) {
+  function updateTargetStatus(currentPerGram) {
+    const saved = getSavedTargetPerGram();
+    if (!saved) {
       els.targetStatus.textContent = "저장된 목표가가 없습니다.";
       return;
     }
-    els.targetInput.value = savedTarget;
-    const difference = ((savedTarget / currentPrice) - 1) * 100;
-    els.targetStatus.textContent = difference > 0
-      ? `저장됨 · 현재 기준가보다 ${difference.toFixed(1)}% 높은 ${won.format(savedTarget)}`
-      : `저장됨 · 현재 기준가가 목표가를 ${Math.abs(difference).toFixed(1)}% 웃돌고 있어요`;
+    const delta = (saved / currentPerGram - 1) * 100;
+    const label = `${formatUnitPrice(saved)} / ${getPriceUnit().short}`;
+    els.targetStatus.textContent = delta > 0
+      ? `저장됨 · 현재 환산가보다 ${delta.toFixed(1)}% 높은 목표 ${label}`
+      : `저장됨 · 현재 환산가가 목표 ${label}보다 ${Math.abs(delta).toFixed(1)}% 높습니다`;
   }
+
+  document.querySelectorAll("[data-price-unit]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const next = button.dataset.priceUnit;
+        if (!Object.hasOwn(PRICE_UNITS, next) || next === state.priceUnit) return;
+        const draft = els.targetInput.value.trim();
+        const perGram = draft ? Number(draft) / getPriceUnit().grams : null;
+        state.priceUnit = next;
+        try { localStorage.setItem(UNIT_STORAGE_KEY, next); } catch (_) { /* Storage blocked. */ }
+        if (perGram !== null && Number.isFinite(perGram)) {
+          els.targetInput.value = String(Math.round(perGram * getPriceUnit().grams));
+        }
+        render();
+      });
+    });
+    const saved = getSavedTargetPerGram();
+    if (saved > 0) els.targetInput.value = String(Math.round(saved * getPriceUnit().grams));
 
   document.querySelectorAll("[data-horizon]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -337,15 +450,23 @@
   els.targetForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const target = Number(els.targetInput.value);
-    if (!target || target < 10000) return;
-    localStorage.setItem("goldSignalTarget", String(Math.round(target)));
-    updateTargetStatus(getCurrentPrice());
+    if (!Number.isFinite(target) || target <= 0 || target > 1000000000) {
+      showToast("유효한 목표가를 입력해 주세요.");
+      return;
+    }
+    try {
+      localStorage.setItem(TARGET_STORAGE_KEY, String(target / getPriceUnit().grams));
+      updateTargetStatus(getCurrentPrice());
+    } catch (_) {
+      showToast("브라우저 저장 기능이 차단되어 있습니다.");
+      return;
+    }
     showToast("목표가를 이 브라우저에 저장했어요.");
   });
 
   document.querySelector("#copyBrief").addEventListener("click", async () => {
     const rate = getOutlookRate();
-    const message = `[금시그널 ${horizons[state.horizon].label} 전망] ${describeOutlook(rate)[0]} · 중심값 ${won.format(getCurrentPrice() * (1 + rate))} (${formatPercent(rate)}) — 시뮬레이션이며 투자 조언이 아닙니다.`;
+    const message = `[금시그널 ${horizons[state.horizon].label} 전망] ${describeOutlook(rate)[0]} · 중심값 ${formatUnitPrice(getCurrentPrice() * (1 + rate))} / ${getPriceUnit().short} (${formatPercent(rate)}) — 시뮬레이션이며 투자 조언이 아닙니다.`;
     try {
       await navigator.clipboard.writeText(message);
       showToast("인사이트를 복사했어요.");
@@ -409,6 +530,6 @@
   loadAutomatedMarketData();
 
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=20261022-adfit1", { updateViaCache: "none" }).catch(() => {}));
+    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js?v=20261025-unit5", { updateViaCache: "none" }).catch(() => {}));
   }
 })();
