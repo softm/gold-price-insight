@@ -1,4 +1,4 @@
-const CACHE_NAME = "gold-signal-v5-unit5";
+const CACHE_NAME = "gold-signal-v5-unit5-suite-20261028";
 const APP_SHELL = [
   "./",
   "./index.html",
