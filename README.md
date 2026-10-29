@@ -56,15 +56,7 @@ UI는 [Google Stitch의 Gold Signal UI System](https://stitch.withgoogle.com/pro
 
 ## Android
 
-`android/`는 GitHub Pages의 최신 화면을 표시하고 네트워크 장애 시 번들에 포함된 `dist/` 화면으로 전환하는 Android WebView 앱입니다.
-
-```bash
-cd android
-./gradlew assembleDebug
-./gradlew bundleRelease
-```
-
-릴리스 빌드에는 로컬 `signing.properties`와 `keystore/`의 업로드 키가 필요하며 두 경로는 Git에서 제외됩니다.
+Android 앱은 별도 프로젝트 `/Users/softm/makeme/goldsignal.android`에서 관리합니다. 이 웹 프로젝트의 `dist/`를 Android 프로젝트의 `web-assets/`에 동기화하면 앱의 오프라인 화면에도 웹 변경을 반영할 수 있습니다.
 
 이 앱의 수치는 자동 수집 시장 데이터와 사용자가 조정한 가정을 기반으로 한 시뮬레이션이며 실제 시세나 투자 수익을 보장하지 않습니다.
 
