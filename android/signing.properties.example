@@ -1,4 +1,0 @@
-storeFile=keystore/gold-signal-upload.jks
-storePassword=CHANGE_ME
-keyAlias=gold-signal-upload
-keyPassword=CHANGE_ME
