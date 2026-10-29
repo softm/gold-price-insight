@@ -1,0 +1,15 @@
+.ad-preferences[hidden], .ad-slot[hidden], #adSettings[hidden] { display: none !important; }
+.ad-preferences, .ad-slot { grid-column: 1 / -1; }
+.ad-preferences { padding: 20px; border: 1px solid var(--line, #d8d4c9); border-radius: 12px; background: var(--surface, #faf9f5); color: var(--ink, #191a16); }
+.ad-preferences h2 { margin: 0 0 10px; font-size: 17px; }
+.ad-preferences p { max-width: 820px; margin: 8px 0; font-size: 13px; line-height: 1.7; }
+.ad-preferences a, #adSettings { color: #82631d; text-decoration: underline; }
+.ad-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+.ad-actions button { min-height: 44px; padding: 10px 18px; border: 1px solid #827552; border-radius: 8px; color: inherit; background: transparent; cursor: pointer; font: inherit; font-size: 13px; }
+.ad-actions button:focus-visible, #adSettings:focus-visible { outline: 2px solid #ad832b; outline-offset: 4px; }
+#adSettings { min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; font: inherit; font-size: 12px; }
+.ad-slot { padding: 28px 0; margin: 8px 0; border-block: 1px solid var(--line, #d8d4c9); text-align: center; }
+.ad-label { display: block; margin-bottom: 10px; font-size: 10px; letter-spacing: .15em; color: var(--muted, #73746b); }
+.ad-banner { width: 320px; max-width: 100%; min-height: 100px; margin: 0 auto; }
+.ad-preview { box-sizing: border-box; display: grid; align-content: center; width: 320px; height: 100px; border: 1px dashed #a88b48; background: #ece6d6; color: #5d5238; white-space: pre-line; font-size: 12px; line-height: 1.8; }
+@media (max-width: 360px) { .ad-slot { display: none; } }
